@@ -1,0 +1,58 @@
+name: Build
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      JEKYLL_ENV: production
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: neveler/HMCL-docs
+          ref: dev-i18n
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+      - name: build
+        run: |
+          bundle install
+          echo "url: hmcl-docs.github.io" > config.yml
+          bundle exec jekyll build --destination _site --config _config.yml,config.yml
+          cp -r ./src/data ./data
+          for config in ./_config.*.yml; do
+              [ -f "$config" ] || continue
+              language="${config#./_config.}"
+              language="${language%.yml}"
+              if [ "$language" != "default" ]; then
+                  for data in ./src/data/*."$language".*; do
+                      [ -f "$data" ] || continue
+                      dest="${data/.$language./.}"
+                      mv "$data" "$dest"
+                  done
+                  find src -type f -name "*.md" ! -name "*.*.md" | while read -r file; do
+                      target="${file%.md}.$language.md"
+                      if [ ! -f "$target" ]; then
+                          cp "$file" "$target"
+                      fi
+                  done
+              fi
+              bundle exec jekyll build --destination "_site_$language" --config "_config.yml,_config.$language.yml,config.yml"
+              cd "_site_$language"
+              if [ "$language" != "default" ]; then
+                  find . -type f -name "*.$language.html" -exec cp --parents {} ../_site \;
+              else
+                  find . -type f -name "*.html" -exec cp --parents {} ../_site \;
+              fi
+              cd ..
+              cp -r ./data ./src/data
+          done
+          cd _site
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git init
+          git add .
+          git commit -m "Deploy [skip ci]" || echo "No changes to commit"
+          git checkout -b site
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin site -f

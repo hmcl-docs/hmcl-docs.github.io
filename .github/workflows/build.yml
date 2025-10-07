@@ -1,5 +1,7 @@
 name: Build
 on: [workflow_dispatch]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,48 +12,24 @@ jobs:
         with:
           repository: neveler/HMCL-docs
           ref: dev-i18n
+          fetch-depth: 1
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: '3.4'
           bundler-cache: true
       - name: build
         run: |
-          bundle install
-          echo "url: hmcl-docs.github.io" > config.yml
-          bundle exec jekyll build --destination _site --config _config.yml,config.yml
-          cp -r ./src/data ./data
-          for config in ./_config.*.yml; do
-              [ -f "$config" ] || continue
-              language="${config#./_config.}"
-              language="${language%.yml}"
-              if [ "$language" != "default" ]; then
-                  for data in ./src/data/*."$language".*; do
-                      [ -f "$data" ] || continue
-                      dest="${data/.$language./.}"
-                      mv "$data" "$dest"
-                  done
-                  find src -type f -name "*.md" ! -name "*.*.md" | while read -r file; do
-                      target="${file%.md}.$language.md"
-                      if [ ! -f "$target" ]; then
-                          cp "$file" "$target"
-                      fi
-                  done
-              fi
-              bundle exec jekyll build --destination "_site_$language" --config "_config.yml,_config.$language.yml,config.yml"
-              cd "_site_$language"
-              if [ "$language" != "default" ]; then
-                  find . -type f -name "*.$language.html" -exec cp --parents {} ../_site \;
-              else
-                  find . -type f -name "*.html" -exec cp --parents {} ../_site \;
-              fi
-              cd ..
-              cp -r ./data ./src/data
-          done
+          echo "url: https://hmcl-docs.github.io" > _config_action.yml
+          echo "footer:" >> _config_action.yml
+          echo "  links:" >> _config_action.yml
+          echo "    - label: Github" >> _config_action.yml
+          echo "      icon: fab fa-fw fa-github" >> _config_action.yml
+          echo "      url: https://github.com/HMCL-dev/HMCL" >> _config_action.yml
+          bash _build/setup.sh _config_action.yml
           cd _site
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git init
-          git add .
+          git init && git add .
           git commit -m "Deploy [skip ci]" || echo "No changes to commit"
           git checkout -b site
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git

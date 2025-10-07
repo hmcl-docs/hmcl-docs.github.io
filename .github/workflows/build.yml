@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: neveler/HMCL-docs
-          ref: dev-i18n-test
+          ref: dev-i18n
           fetch-depth: 1
       - uses: ruby/setup-ruby@v1
         with:

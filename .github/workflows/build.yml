@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: neveler/HMCL-docs
-          ref: dev-i18n
+          ref: dev-i18n-test
           fetch-depth: 1
       - uses: ruby/setup-ruby@v1
         with:
@@ -19,13 +19,13 @@ jobs:
           bundler-cache: true
       - name: build
         run: |
-          echo "url: https://hmcl-docs.github.io" > _config_action.yml
-          echo "footer:" >> _config_action.yml
-          echo "  links:" >> _config_action.yml
-          echo "    - label: Github" >> _config_action.yml
-          echo "      icon: fab fa-fw fa-github" >> _config_action.yml
-          echo "      url: https://github.com/HMCL-dev/HMCL" >> _config_action.yml
-          bash _build/setup.sh _config_action.yml
+          echo "url: https://hmcl-docs.github.io" > build/action.yml
+          echo "footer:" >> build/action.yml
+          echo "  links:" >> build/action.yml
+          echo "    - label: Github" >> build/action.yml
+          echo "      icon: fab fa-fw fa-github" >> build/action.yml
+          echo "      url: https://github.com/HMCL-dev/HMCL" >> build/action.yml
+          bash build/setup.sh build/action.yml
           cd _site
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"

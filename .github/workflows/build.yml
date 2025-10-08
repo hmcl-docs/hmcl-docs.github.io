@@ -1,5 +1,16 @@
 name: Build
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '目标分支'
+        required: true
+        default: 'dev-i18n'
+        type: choice
+        options:
+        - dev
+        - dev-i18n
+        - dev-i18n-data
 permissions:
   contents: write
 jobs:
